@@ -2,7 +2,6 @@
 import { createElement } from "./mini-react.js";
 import { useState } from "./reactive-engine.js";
 
-// Bộ dữ liệu chuẩn với ID ổn định
 export const SMART_PEOPLE = [
   { id: "sp-1", name: "Johann Goethe", age: 82, iq: 210 },
   { id: "sp-2", name: "Albert Einstein", age: 76, iq: 205 },
@@ -15,11 +14,28 @@ export const SMART_PEOPLE = [
 export function ScientistDirectory(props = {}) {
   const initialData = props.initialData || SMART_PEOPLE;
 
-  // Quản lý trạng thái độc lập
   const [people, setPeople] = useState(initialData);
   const [query, setQuery] = useState("");
   const [minIq, setMinIq] = useState(160);
   const [sortBy, setSortBy] = useState("iq-desc");
 
-  return createElement("section", { "aria-label": "Pioneer Directory" });
+  // Derived State: Tính toán trực tiếp không trigger thêm render pass
+  const visible = people
+    .filter(
+      (p) =>
+        p.name.toLowerCase().includes(query.trim().toLowerCase()) &&
+        p.iq >= minIq,
+    )
+    .toSorted((a, b) => {
+      if (sortBy === "iq-desc") return b.iq - a.iq;
+      if (sortBy === "iq-asc") return a.iq - b.iq;
+      if (sortBy === "age-desc") return b.age - a.age;
+      return a.age - b.age;
+    });
+
+  return createElement(
+    "section",
+    { "aria-label": "Pioneer Directory" },
+    createElement("p", null, `Matching: ${visible.length}`),
+  );
 }

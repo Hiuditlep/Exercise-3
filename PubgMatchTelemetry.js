@@ -2,7 +2,6 @@
 import { createElement } from "./mini-react.js";
 import { useState } from "./reactive-engine.js";
 
-// Bộ dữ liệu đội tuyển PUBG Vietnam Series
 export const PUBG_VN_SQUADS = [
   {
     id: "ces",
@@ -36,15 +35,13 @@ export const PUBG_VN_SQUADS = [
   },
 ];
 
-// Biến lưu giữ controller hiện tại để hủy khi switch squad
 let activeAbortController = null;
 
 export function fetchKraftonPubgTelemetry(squadId, { signal }) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
-      // Giả lập 35% packet loss từ trạm KRAFTON Satellite
       if (Math.random() < 0.35) {
-        reject(new Error("Packet loss 35% từ trạm vệ tinh KRAFTON."));
+        reject(new Error("Packet loss 35% từ trạm mặt đất KRAFTON Satellite."));
         return;
       }
       const squad = PUBG_VN_SQUADS.find((s) => s.id === squadId);
@@ -64,12 +61,10 @@ export function PubgMatchTelemetry(props = {}) {
 
   const [activeSquad, setActiveSquad] = useState(initialSquad);
   const [view, setView] = useState({ status: "IDLE", data: null, error: null });
-  const [retryTick, setRetryTick] = useState(0);
 
-  // Kích hoạt FSM Fetching kết hợp AbortController
-  const startTelemetryStream = (squadId) => {
+  const triggerFetch = (squadId) => {
     if (activeAbortController) {
-      activeAbortController.abort(); // Hủy request đang dang dở trước đó
+      activeAbortController.abort();
     }
 
     const controller = new AbortController();
@@ -82,11 +77,121 @@ export function PubgMatchTelemetry(props = {}) {
         setView({ status: "SUCCESS", data: payload, error: null });
       })
       .catch((err) => {
-        // Safe AbortError Guard: Tránh flash lỗi giả mạo khi user chuyển tab nhanh
         if (err.name === "AbortError") return;
         setView({ status: "ERROR", data: null, error: err.message });
       });
   };
 
-  return createElement("section", { "aria-label": "PUBG Telemetry Hub" });
+  const handleSelectSquad = (id) => {
+    setActiveSquad(id);
+    triggerFetch(id);
+  };
+
+  const handleRetry = () => {
+    triggerFetch(activeSquad);
+  };
+
+  // 1. Thanh chuyển chọn Squad
+  const squadButtons = PUBG_VN_SQUADS.map((s) =>
+    createElement(
+      "button",
+      {
+        type: "button",
+        className: `btn-squad ${activeSquad === s.id ? "active" : ""}`,
+        onClick: () => handleSelectSquad(s.id),
+      },
+      s.name,
+    ),
+  );
+
+  const headerNode = createElement(
+    "header",
+    { className: "telemetry-header" },
+    createElement("h3", null, "KRAFTON PVS Live Telemetry Radar"),
+    createElement(
+      "nav",
+      { "aria-label": "Select Squad", className: "squad-nav" },
+      ...squadButtons,
+    ),
+  );
+
+  // 2. Nội dung chính theo 4 trạng thái FSM
+  let contentNode = null;
+
+  if (view.status === "IDLE") {
+    contentNode = createElement(
+      "section",
+      { className: "telemetry-idle" },
+      createElement(
+        "p",
+        null,
+        "Radar đang chờ lệnh. Nhấn vào Squad để quét dữ liệu vệ tinh.",
+      ),
+      createElement(
+        "button",
+        {
+          type: "button",
+          className: "btn-launch",
+          onClick: () => handleSelectSquad(activeSquad),
+        },
+        "Launch Radar",
+      ),
+    );
+  } else if (view.status === "LOADING") {
+    // Blue-Zone 220px pulsing skeleton card chống CLS
+    contentNode = createElement(
+      "section",
+      { className: "telemetry-skeleton", "aria-busy": "true" },
+      createElement(
+        "p",
+        null,
+        "Syncing KRAFTON Radar with Erangel/Miramar Satellites...",
+      ),
+    );
+  } else if (view.status === "ERROR") {
+    // Accessible alert box thay thế hoàn toàn window.alert()
+    contentNode = createElement(
+      "section",
+      { role: "alert", className: "telemetry-error" },
+      createElement("p", null, `Blue-Zone Link Lost: ${view.error}`),
+      createElement(
+        "button",
+        { type: "button", className: "btn-retry", onClick: handleRetry },
+        "Reconnect Satellite (Retry)",
+      ),
+    );
+  } else if (view.status === "SUCCESS" && view.data) {
+    // Hiển thị dữ liệu trực tiếp với aria-live
+    contentNode = createElement(
+      "article",
+      { className: "telemetry-card", "aria-live": "polite" },
+      createElement("h4", null, view.data.name),
+      createElement(
+        "p",
+        null,
+        `Bản đồ tác chiến: ${view.data.map} (${view.data.phase})`,
+      ),
+      createElement(
+        "p",
+        null,
+        `Chỉ số hạ gục: ${view.data.kills} Kills | Còn sống: ${view.data.alive}/4 thành viên`,
+      ),
+      createElement("p", null, `Xác suất WWCD: ${view.data.wwcdProb}`),
+      createElement(
+        "p",
+        { className: "squad-status" },
+        `Trạng thái: ${view.data.status}`,
+      ),
+    );
+  }
+
+  return createElement(
+    "section",
+    {
+      className: "pubg-telemetry-container",
+      "aria-label": "KRAFTON PUBG VN Telemetry",
+    },
+    headerNode,
+    createElement("main", { className: "telemetry-viewport" }, contentNode),
+  );
 }

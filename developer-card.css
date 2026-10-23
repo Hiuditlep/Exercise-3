@@ -1,0 +1,101 @@
+/* developer-card.css */
+:root {
+  --card-bg: #1e293b;
+  --card-text: #f8fafc;
+  --accent: #38bdf8;
+  --border: #334155;
+}
+
+.developer-card {
+  background-color: var(--card-bg);
+  color: var(--card-text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 420px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 1.5rem auto;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.avatar {
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent);
+}
+
+.card-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.card-header p {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+.card-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin: 1.5rem 0;
+  padding: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.card-metrics dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.card-metrics dd {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.card-skills {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.card-skills li {
+  background-color: var(--border);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+}
+
+/* Chuẩn co giãn cho màn hình di động 375px (iPhone SE) */
+@media (max-width: 375px) {
+  .developer-card {
+    padding: 1rem;
+    border-radius: 0;
+  }
+  .card-header {
+    flex-direction: column;
+    text-align: center;
+  }
+  .card-metrics {
+    grid-template-columns: 1fr;
+  }
+}
